@@ -88,8 +88,20 @@ class RealSenseCollector:
             color_image = np.asanyarray(color_frame.get_data())
             results = self.hands.process(cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB))
             
+
+            
             if results.multi_hand_landmarks:
                 for hand_landmarks in results.multi_hand_landmarks:
+                    # 绘制手部关键点
+                    self.mp_drawing.draw_landmarks(
+                        color_image,
+                        hand_landmarks,
+                        self.mp_hands.HAND_CONNECTIONS)
+                    
+                    # 计算并绘制手部坐标系
+                    origin, rotation_matrix = self.calculator.create_hand_coordinate_system(hand_landmarks)
+                    self.calculator.draw_hand_coordinate_system(color_image, origin, rotation_matrix)
+                    
                     # 计算关节角度
                     angles = self.calculator.calculate_joint_angles(hand_landmarks)
                     
@@ -102,8 +114,7 @@ class RealSenseCollector:
                         connection_drawing_spec=self.mp_drawing_styles.get_default_hand_connections_style()
                     )
                     
-                    # # 可视化角度
-                    # self.calculator.visualize_angles(color_image, hand_landmarks, angles)
+
                     
                     with self.lock:
                         self.hand_data = angles
