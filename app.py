@@ -72,8 +72,7 @@ def myo_status():
             'synced': status['synced'],
             'frame_rate': status['frame_rate'],
             'total_frames': status['total_frames'],
-            'artifact_count': status['artifact_count'],
-            'artifact_rate': status['artifact_rate']
+
         })
     return jsonify({
         'status': 'error',

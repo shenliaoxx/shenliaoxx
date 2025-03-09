@@ -1,65 +1,3 @@
-# import myo
-# from threading import Lock
-# import time
-
-# class MyoCollector(myo.DeviceListener):
-#     def __init__(self):
-#         super().__init__()
-#         self.emg_data = [0] * 8
-#         self.lock = Lock()
-#         self.connected = False
-        
-#     def on_connected(self, event):
-#         print("Myo已连接")
-#         self.connected = True
-#         event.device.stream_emg(True)
-        
-#     def on_disconnected(self, event):
-#         print("Myo已断开连接")
-#         self.connected = False
-        
-#     def on_emg(self, event):
-#         with self.lock:
-#             self.emg_data = list(event.emg)
-            
-#     def get_data(self):
-#         with self.lock:
-#             return self.emg_data.copy()
-
-# class MyoManager:
-#     def __init__(self):
-#         self.collector = None
-#         self.hub = None
-#         self.is_running = False
-#         try:
-#             myo.init()
-#             self.hub = myo.Hub()
-#             self.collector = MyoCollector()
-#             self.is_running = True
-#             print("Myo管理器初始化成功")
-#         except Exception as e:
-#             print(f"Myo初始化错误: {e}")
-        
-#     def run_collection(self):
-#         if not self.hub or not self.collector:
-#             print("Myo未正确初始化")
-#             return
-            
-#         while self.is_running:
-#             try:
-#                 if not self.collector.connected:
-#                     print("尝试连接Myo...")
-#                 self.hub.run(self.collector, 100)
-#                 time.sleep(0.01)
-#             except Exception as e:
-#                 print(f"采集错误: {e}")
-#                 time.sleep(1)
-    
-#     def get_latest_data(self):
-#         if not self.collector:
-#             return [0] * 8
-#         return self.collector.get_data()
-    
 import myo
 from threading import Lock
 import time
@@ -134,11 +72,7 @@ class MyoCollector(myo.DeviceListener):
         self.last_frame_time = time.time()
         self.current_fps = 0
         
-        # 运动伪影检测
-        self.artifact_threshold = 500  # 运动伪影阈值
-        self.artifact_count = 0
-        self.last_valid_data = [0] * 8
-        self.artifact_rate = 0
+
         
     def on_connected(self, event):
         print("Myo已连接")
@@ -161,21 +95,7 @@ class MyoCollector(myo.DeviceListener):
         print("Myo失去同步")
         self.synced = False
     
-    def detect_artifact(self, data):
-        """检测运动伪影"""
-        if not hasattr(self, 'last_raw_data'):
-            self.last_raw_data = data
-            return False
-            
-        # 计算相邻数据点的差值
-        diff = [abs(a - b) for a, b in zip(data, self.last_raw_data)]
-        max_diff = max(diff)
-        
-        self.last_raw_data = data
-        
-        # 如果信号突变超过阈值，认为是运动伪影
-        return max_diff > self.artifact_threshold
-            
+
     def on_emg(self, event):
         with self.lock:
             # 更新帧率计算
@@ -192,21 +112,8 @@ class MyoCollector(myo.DeviceListener):
             
             # 获取原始数据
             raw_data = list(event.emg)
-            
-            # 检测运动伪影
-            is_artifact = self.detect_artifact(raw_data)
-            
-            if is_artifact:
-                self.artifact_count += 1
-                # 使用上一帧有效数据
-                self.raw_emg = self.last_valid_data
-            else:
-                self.raw_emg = raw_data
-                self.last_valid_data = raw_data
-            
-            # 更新运动伪影率
-            if self.total_frames > 0:
-                self.artifact_rate = (self.artifact_count / self.total_frames) * 100
+            self.raw_emg = raw_data
+
             
             # 更新滤波器缓冲区
             self.emg_filter.update_buffer(self.raw_emg)
@@ -239,8 +146,7 @@ class MyoCollector(myo.DeviceListener):
             'synced': self.synced,
             'frame_rate': self.current_fps,
             'total_frames': self.total_frames,
-            'artifact_count': self.artifact_count,
-            'artifact_rate': f"{self.artifact_rate:.2f}%"
+ 
         }
 
 class MyoManager:
@@ -284,7 +190,7 @@ class MyoManager:
                     if current_time - self.last_status_print >= self.status_print_interval:
                         status = self.collector.get_status()
                         print(f"Myo状态 - 帧率: {status['frame_rate']:.1f} FPS | "
-                              f"运动伪影率: {status['artifact_rate']} | "
+                            #   f"运动伪影率: {status['artifact_rate']} | "
                               f"同步状态: {'已同步' if status['synced'] else '未同步'}")
                         self.last_status_print = current_time
                 
@@ -306,7 +212,6 @@ class MyoManager:
                 'synced': False,
                 'frame_rate': 0,
                 'total_frames': 0,
-                'artifact_count': 0,
-                'artifact_rate': "0.00%"
+
             }
         return self.collector.get_status()

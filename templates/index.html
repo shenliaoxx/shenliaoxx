@@ -358,14 +358,7 @@
                     <span class="stat-label">总帧数:</span>
                     <span class="stat-value" id="total-frames">0</span>
                 </div>
-                <div class="stat-item">
-                    <span class="stat-label">运动伪影率:</span>
-                    <span class="stat-value" id="artifact-rate">0%</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">伪影计数:</span>
-                    <span class="stat-value" id="artifact-count">0</span>
-                </div>
+
             </div>
 
             <div class="emg-charts-grid">
@@ -512,22 +505,7 @@
                 // 更新总帧数
                 document.getElementById('total-frames').textContent = data.total_frames;
 
-                // 更新运动伪影率
-                const artifactRateElement = document.getElementById('artifact-rate');
-                artifactRateElement.textContent = data.artifact_rate;
 
-                // 根据伪影率设置颜色
-                const artifactRateValue = parseFloat(data.artifact_rate);
-                if (artifactRateValue > 5) {
-                    artifactRateElement.className = 'stat-value warning';
-                } else if (artifactRateValue > 10) {
-                    artifactRateElement.className = 'stat-value danger';
-                } else {
-                    artifactRateElement.className = 'stat-value';
-                }
-
-                // 更新伪影计数
-                document.getElementById('artifact-count').textContent = data.artifact_count;
             }
 
             updateMyoStatus(message, isError = false) {
