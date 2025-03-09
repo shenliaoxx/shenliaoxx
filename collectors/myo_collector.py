@@ -63,14 +63,82 @@
 import myo
 from threading import Lock
 import time
+import numpy as np
+from scipy import signal
+from collections import deque
+from datetime import datetime
+
+class EMGFilter:
+    def __init__(self, sampling_rate=200):
+        self.sampling_rate = sampling_rate
+        
+        # 初始化缓冲区
+        self.buffer_size = 50
+        self.emg_buffers = [deque(maxlen=self.buffer_size) for _ in range(8)]
+        
+        # 设计滤波器
+        nyquist_freq = sampling_rate / 2
+        self.b_bandpass, self.a_bandpass = signal.butter(2, 
+            [20/nyquist_freq, 95/nyquist_freq], 
+            btype='band')
+        self.b_notch, self.a_notch = signal.iirnotch(
+            50/nyquist_freq, 30, sampling_rate)
+            
+    def update_buffer(self, emg_data):
+        """更新数据缓冲区"""
+        for i, value in enumerate(emg_data):
+            self.emg_buffers[i].append(value)
+            
+    def filter_data(self):
+        """应用滤波器处理数据"""
+        filtered_data = np.zeros(8)
+        
+        for i in range(8):
+            if len(self.emg_buffers[i]) >= 10:  # 确保有足够的数据点
+                data = np.array(list(self.emg_buffers[i]))
+                
+                try:
+                    # 应用带通滤波
+                    filtered = signal.lfilter(self.b_bandpass, self.a_bandpass, data)
+                    # 应用陷波滤波
+                    filtered = signal.lfilter(self.b_notch, self.a_notch, filtered)
+                    # 获取最新的滤波结果
+                    filtered_data[i] = filtered[-1]
+                except Exception as e:
+                    print(f"滤波错误: {e}")
+                    filtered_data[i] = data[-1]  # 出错时使用原始数据
+            else:
+                # 数据不足时使用原始数据
+                filtered_data[i] = self.emg_buffers[i][-1] if self.emg_buffers[i] else 0
+                
+        return filtered_data
 
 class MyoCollector(myo.DeviceListener):
     def __init__(self):
         super().__init__()
-        self.emg_data = [0] * 8
         self.lock = Lock()
         self.connected = False
         self.synced = False
+        
+        # 初始化滤波器
+        self.emg_filter = EMGFilter()
+        
+        # 初始化数据
+        self.raw_emg = [0] * 8
+        self.filtered_emg = [0] * 8
+        
+        # 帧率计算
+        self.timestamp_history = deque(maxlen=100)  # 存储最近100帧的时间戳
+        self.frame_count = 0
+        self.total_frames = 0
+        self.last_frame_time = time.time()
+        self.current_fps = 0
+        
+        # 运动伪影检测
+        self.artifact_threshold = 500  # 运动伪影阈值
+        self.artifact_count = 0
+        self.last_valid_data = [0] * 8
+        self.artifact_rate = 0
         
     def on_connected(self, event):
         print("Myo已连接")
@@ -92,19 +160,87 @@ class MyoCollector(myo.DeviceListener):
     def on_arm_unsynced(self, event):
         print("Myo失去同步")
         self.synced = False
+    
+    def detect_artifact(self, data):
+        """检测运动伪影"""
+        if not hasattr(self, 'last_raw_data'):
+            self.last_raw_data = data
+            return False
+            
+        # 计算相邻数据点的差值
+        diff = [abs(a - b) for a, b in zip(data, self.last_raw_data)]
+        max_diff = max(diff)
+        
+        self.last_raw_data = data
+        
+        # 如果信号突变超过阈值，认为是运动伪影
+        return max_diff > self.artifact_threshold
             
     def on_emg(self, event):
         with self.lock:
-            self.emg_data = list(event.emg)
+            # 更新帧率计算
+            current_time = time.time()
+            self.timestamp_history.append(current_time)
+            self.frame_count += 1
+            self.total_frames += 1
+            
+            # 每秒更新一次帧率
+            if current_time - self.last_frame_time >= 1.0:
+                self.current_fps = self.frame_count / (current_time - self.last_frame_time)
+                self.frame_count = 0
+                self.last_frame_time = current_time
+            
+            # 获取原始数据
+            raw_data = list(event.emg)
+            
+            # 检测运动伪影
+            is_artifact = self.detect_artifact(raw_data)
+            
+            if is_artifact:
+                self.artifact_count += 1
+                # 使用上一帧有效数据
+                self.raw_emg = self.last_valid_data
+            else:
+                self.raw_emg = raw_data
+                self.last_valid_data = raw_data
+            
+            # 更新运动伪影率
+            if self.total_frames > 0:
+                self.artifact_rate = (self.artifact_count / self.total_frames) * 100
+            
+            # 更新滤波器缓冲区
+            self.emg_filter.update_buffer(self.raw_emg)
+            
+            # 应用滤波
+            filtered_data = self.emg_filter.filter_data()
+            self.filtered_emg = filtered_data.tolist()
             
     def get_data(self):
         with self.lock:
-            return self.emg_data.copy()
+            return {
+                'raw_emg': self.raw_emg.copy(),
+                'filtered_emg': self.filtered_emg.copy()
+            }
+    
+    def calculate_frame_rate(self):
+        """计算当前帧率"""
+        if len(self.timestamp_history) < 2:
+            return 0
+            
+        # 计算最近100帧的平均帧率
+        time_diff = self.timestamp_history[-1] - self.timestamp_history[0]
+        if time_diff <= 0:
+            return 0
+        return (len(self.timestamp_history) - 1) / time_diff
             
     def get_status(self):
         return {
             'connected': self.connected,
-            'synced': self.synced
+            'synced': self.synced,
+            'frame_rate': self.current_fps,
+            'total_frames': self.total_frames,
+            'artifact_count': self.artifact_count,
+            'artifact_rate': f"{self.artifact_rate:.2f}%"
         }
 
 class MyoManager:
@@ -114,6 +250,9 @@ class MyoManager:
         self.is_running = False
         self.retry_count = 0
         self.max_retries = 5
+        self.last_status_print = time.time()
+        self.status_print_interval = 5  # 每5秒打印一次状态
+        
         try:
             myo.init()
             self.hub = myo.Hub()
@@ -139,19 +278,35 @@ class MyoManager:
                         self.retry_count = 0
                 else:
                     self.retry_count = 0
+                    
+                    # 定期打印状态信息
+                    current_time = time.time()
+                    if current_time - self.last_status_print >= self.status_print_interval:
+                        status = self.collector.get_status()
+                        print(f"Myo状态 - 帧率: {status['frame_rate']:.1f} FPS | "
+                              f"运动伪影率: {status['artifact_rate']} | "
+                              f"同步状态: {'已同步' if status['synced'] else '未同步'}")
+                        self.last_status_print = current_time
                 
-                self.hub.run(self.collector, 100)
-                time.sleep(0.01)
+                self.hub.run(self.collector, 50)  # 降低轮询间隔以提高采样率
+                time.sleep(0.005)  # 减少睡眠时间以提高响应性
             except Exception as e:
                 print(f"采集错误: {e}")
                 time.sleep(1)
     
     def get_latest_data(self):
         if not self.collector:
-            return [0] * 8
+            return {'raw_emg': [0] * 8, 'filtered_emg': [0] * 8}
         return self.collector.get_data()
         
     def get_status(self):
         if not self.collector:
-            return {'connected': False, 'synced': False}
+            return {
+                'connected': False, 
+                'synced': False,
+                'frame_rate': 0,
+                'total_frames': 0,
+                'artifact_count': 0,
+                'artifact_rate': "0.00%"
+            }
         return self.collector.get_status()

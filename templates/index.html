@@ -236,6 +236,63 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
+
+        /* 新增样式 */
+        .stats-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            border: 1px solid #e9ecef;
+        }
+
+        .stat-label {
+            font-weight: bold;
+            margin-right: 5px;
+            color: #495057;
+        }
+
+        .stat-value {
+            color: #007bff;
+        }
+
+        .stat-value.warning {
+            color: #ffc107;
+        }
+
+        .stat-value.danger {
+            color: #dc3545;
+        }
+
+        .emg-mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .mode-btn {
+            padding: 5px 10px;
+            font-size: 12px;
+            background: #e9ecef;
+            color: #495057;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .mode-btn.active {
+            background: #007bff;
+            color: white;
+        }
     </style>
 </head>
 
@@ -283,7 +340,34 @@
                     EMG数据
                     <span class="data-indicator" id="emg-indicator"></span>
                 </div>
+                <!-- 新增EMG模式选择器 -->
+                <div class="emg-mode-selector">
+                    <button class="mode-btn active" id="filtered-mode-btn"
+                        onclick="switchEMGMode('filtered')">滤波后数据</button>
+                    <button class="mode-btn" id="raw-mode-btn" onclick="switchEMGMode('raw')">原始数据</button>
+                </div>
             </div>
+
+            <!-- 新增EMG统计信息 -->
+            <div class="stats-container">
+                <div class="stat-item">
+                    <span class="stat-label">帧率:</span>
+                    <span class="stat-value" id="frame-rate">0 FPS</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">总帧数:</span>
+                    <span class="stat-value" id="total-frames">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">运动伪影率:</span>
+                    <span class="stat-value" id="artifact-rate">0%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">伪影计数:</span>
+                    <span class="stat-value" id="artifact-count">0</span>
+                </div>
+            </div>
+
             <div class="emg-charts-grid">
                 <div class="emg-chart" id="emg-chart-1"></div>
                 <div class="emg-chart" id="emg-chart-2"></div>
@@ -305,6 +389,9 @@
                 this.recordedData = [];
                 this.MAX_POINTS = 100;
                 this.emgDataPoints = Array(8).fill().map(() => Array(this.MAX_POINTS).fill(0));
+                this.rawEmgDataPoints = Array(8).fill().map(() => Array(this.MAX_POINTS).fill(0));
+                this.filteredEmgDataPoints = Array(8).fill().map(() => Array(this.MAX_POINTS).fill(0));
+                this.currentEMGMode = 'filtered'; // 默认显示滤波后数据
                 this.initCharts();
                 this.fetchData();
                 this.checkMyoStatus();
@@ -313,7 +400,7 @@
             initCharts() {
                 for (let i = 0; i < 8; i++) {
                     const trace = {
-                        y: this.emgDataPoints[i],
+                        y: this.filteredEmgDataPoints[i],
                         mode: 'lines',
                         line: { color: `hsl(${i * 45}, 70%, 50%)` },
                         name: `通道 ${i + 1}`
@@ -346,12 +433,41 @@
             }
 
             updateEMGCharts(emgData) {
+                const rawData = emgData.raw_emg;
+                const filteredData = emgData.filtered_emg;
+
+                // 更新数据缓冲区
                 for (let i = 0; i < 8; i++) {
-                    this.emgDataPoints[i].shift();
-                    this.emgDataPoints[i].push(emgData[i]);
+                    this.rawEmgDataPoints[i].shift();
+                    this.rawEmgDataPoints[i].push(rawData[i]);
+
+                    this.filteredEmgDataPoints[i].shift();
+                    this.filteredEmgDataPoints[i].push(filteredData[i]);
+
+                    // 根据当前模式选择显示的数据
+                    const displayData = this.currentEMGMode === 'raw' ?
+                        this.rawEmgDataPoints[i] : this.filteredEmgDataPoints[i];
 
                     Plotly.update(`emg-chart-${i + 1}`, {
-                        y: [this.emgDataPoints[i]]
+                        y: [displayData]
+                    }, {}, { duration: 0 });
+                }
+            }
+
+            switchEMGMode(mode) {
+                this.currentEMGMode = mode;
+
+                // 更新按钮状态
+                document.getElementById('raw-mode-btn').classList.toggle('active', mode === 'raw');
+                document.getElementById('filtered-mode-btn').classList.toggle('active', mode === 'filtered');
+
+                // 更新图表显示
+                for (let i = 0; i < 8; i++) {
+                    const displayData = mode === 'raw' ?
+                        this.rawEmgDataPoints[i] : this.filteredEmgDataPoints[i];
+
+                    Plotly.update(`emg-chart-${i + 1}`, {
+                        y: [displayData]
                     }, {}, { duration: 0 });
                 }
             }
@@ -368,12 +484,50 @@
                             (data.synced ? '已连接且同步' : '已连接待同步') :
                             '未连接';
                         this.updateMyoStatus(statusText, !data.connected);
+
+                        // 更新EMG统计信息
+                        this.updateEMGStats(data);
                     }
                 } catch (error) {
                     this.updateMyoStatus('状态检查失败', true);
                 }
 
                 setTimeout(() => this.checkMyoStatus(), 1000);
+            }
+
+            updateEMGStats(data) {
+                // 更新帧率
+                const frameRateElement = document.getElementById('frame-rate');
+                frameRateElement.textContent = `${data.frame_rate.toFixed(1)} FPS`;
+
+                // 根据帧率设置颜色
+                if (data.frame_rate < 100) {
+                    frameRateElement.className = 'stat-value warning';
+                } else if (data.frame_rate < 50) {
+                    frameRateElement.className = 'stat-value danger';
+                } else {
+                    frameRateElement.className = 'stat-value';
+                }
+
+                // 更新总帧数
+                document.getElementById('total-frames').textContent = data.total_frames;
+
+                // 更新运动伪影率
+                const artifactRateElement = document.getElementById('artifact-rate');
+                artifactRateElement.textContent = data.artifact_rate;
+
+                // 根据伪影率设置颜色
+                const artifactRateValue = parseFloat(data.artifact_rate);
+                if (artifactRateValue > 5) {
+                    artifactRateElement.className = 'stat-value warning';
+                } else if (artifactRateValue > 10) {
+                    artifactRateElement.className = 'stat-value danger';
+                } else {
+                    artifactRateElement.className = 'stat-value';
+                }
+
+                // 更新伪影计数
+                document.getElementById('artifact-count').textContent = data.artifact_count;
             }
 
             updateMyoStatus(message, isError = false) {
@@ -460,8 +614,8 @@
 
                 // 更新EMG数据指示器
                 const emgIndicator = document.getElementById('emg-indicator');
-                emgIndicator.className = 'data-indicator ' +
-                    (data.emg_data.some(v => v !== 0) ? 'active' : 'inactive');
+                const hasEmgData = data.emg_data.raw_emg && data.emg_data.raw_emg.some(v => v !== 0);
+                emgIndicator.className = 'data-indicator ' + (hasEmgData ? 'active' : 'inactive');
 
                 // 更新角度数据指示器
                 const anglesIndicator = document.getElementById('angles-indicator');
@@ -554,7 +708,19 @@
             }
 
             resetMyoConnection() {
-                // Implementation needed
+                // 发送重置Myo连接的请求
+                fetch('/reset_myo', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            this.updateStatus('Myo连接已重置');
+                        } else {
+                            this.updateStatus('Myo连接重置失败: ' + data.message, true);
+                        }
+                    })
+                    .catch(error => {
+                        this.updateStatus('Myo连接重置请求失败: ' + error.message, true);
+                    });
             }
 
             stop() {
@@ -579,6 +745,10 @@
 
         function resetMyoConnection() {
             collector.resetMyoConnection();
+        }
+
+        function switchEMGMode(mode) {
+            collector.switchEMGMode(mode);
         }
 
         // 页面关闭时清理
