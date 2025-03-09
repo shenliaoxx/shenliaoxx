@@ -293,6 +293,12 @@
             background: #007bff;
             color: white;
         }
+
+        .camera-stats {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 
@@ -318,6 +324,16 @@
                     <div class="section-title">
                         手部追踪
                         <span class="data-indicator" id="camera-indicator"></span>
+                    </div>
+                    <div class="camera-stats">
+                        <span class="stat-item">
+                            <span class="stat-label">帧率:</span>
+                            <span class="stat-value" id="camera-fps">0 FPS</span>
+                        </span>
+                        <span class="stat-item">
+                            <span class="stat-label">总帧数:</span>
+                            <span class="stat-value" id="camera-total-frames">0</span>
+                        </span>
                     </div>
                 </div>
                 <img id="camera-feed" src="" alt="Camera Feed">
@@ -358,7 +374,6 @@
                     <span class="stat-label">总帧数:</span>
                     <span class="stat-value" id="total-frames">0</span>
                 </div>
-
             </div>
 
             <div class="emg-charts-grid">
@@ -505,7 +520,6 @@
                 // 更新总帧数
                 document.getElementById('total-frames').textContent = data.total_frames;
 
-
             }
 
             updateMyoStatus(message, isError = false) {
@@ -608,6 +622,8 @@
                     const response = await fetch('/get_data');
                     const data = await response.json();
 
+                    console.log("相机帧率:", data.camera_fps, "总帧数:", data.camera_total_frames); // 调试输出
+
                     if (data.status === 'success') {
                         // 更新数据指示器
                         this.updateDataIndicators(data);
@@ -625,6 +641,9 @@
                         if (data.hand_data) {
                             this.updateAngles(data.hand_data);
                         }
+
+                        // 更新相机统计信息
+                        this.updateCameraStats(data);
 
                         if (this.isRecording) {
                             this.recordedData.push({
@@ -646,6 +665,37 @@
                 }
 
                 requestAnimationFrame(() => this.fetchData());
+            }
+
+            updateCameraStats(data) {
+                try {
+                    // 更新相机帧率
+                    if (data.camera_fps !== undefined) {
+                        const camerafpsElement = document.getElementById('camera-fps');
+                        if (camerafpsElement) {
+                            camerafpsElement.textContent = `${data.camera_fps} FPS`;
+
+                            // 根据帧率设置颜色
+                            if (data.camera_fps < 20) {
+                                camerafpsElement.className = 'stat-value danger';
+                            } else if (data.camera_fps < 25) {
+                                camerafpsElement.className = 'stat-value warning';
+                            } else {
+                                camerafpsElement.className = 'stat-value';
+                            }
+                        }
+                    }
+
+                    // 更新相机总帧数
+                    if (data.camera_total_frames !== undefined) {
+                        const cameraTotalFramesElement = document.getElementById('camera-total-frames');
+                        if (cameraTotalFramesElement) {
+                            cameraTotalFramesElement.textContent = data.camera_total_frames;
+                        }
+                    }
+                } catch (error) {
+                    console.error('更新相机统计信息错误:', error);
+                }
             }
 
             toggleRecording() {

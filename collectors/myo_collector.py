@@ -96,6 +96,7 @@ class MyoCollector(myo.DeviceListener):
         self.synced = False
     
 
+            
     def on_emg(self, event):
         with self.lock:
             # 更新帧率计算
@@ -113,8 +114,7 @@ class MyoCollector(myo.DeviceListener):
             # 获取原始数据
             raw_data = list(event.emg)
             self.raw_emg = raw_data
-
-            
+    
             # 更新滤波器缓冲区
             self.emg_filter.update_buffer(self.raw_emg)
             
@@ -146,7 +146,6 @@ class MyoCollector(myo.DeviceListener):
             'synced': self.synced,
             'frame_rate': self.current_fps,
             'total_frames': self.total_frames,
- 
         }
 
 class MyoManager:
@@ -190,7 +189,6 @@ class MyoManager:
                     if current_time - self.last_status_print >= self.status_print_interval:
                         status = self.collector.get_status()
                         print(f"Myo状态 - 帧率: {status['frame_rate']:.1f} FPS | "
-                            #   f"运动伪影率: {status['artifact_rate']} | "
                               f"同步状态: {'已同步' if status['synced'] else '未同步'}")
                         self.last_status_print = current_time
                 
@@ -212,6 +210,5 @@ class MyoManager:
                 'synced': False,
                 'frame_rate': 0,
                 'total_frames': 0,
-
             }
         return self.collector.get_status()

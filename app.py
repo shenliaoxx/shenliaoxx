@@ -18,7 +18,7 @@ def process_realsense():
     while realsense_collector.is_running:
         try:
             realsense_collector.process_frame()
-            time.sleep(0.01)
+            # time.sleep(0.01)
         except Exception as e:
             print(f"RealSense处理错误: {e}")
             time.sleep(1)
@@ -38,27 +38,47 @@ def get_data():
         hand_data = realsense_collector.get_hand_data() if realsense_collector else {}
         frame = realsense_collector.get_frame()
         
+        # 获取相机统计信息
+        camera_stats = {}
+        if realsense_collector:
+            try:
+                camera_stats = realsense_collector.get_camera_stats()
+            except Exception as e:
+                print(f"获取相机统计信息错误: {e}")
+                camera_stats = {'camera_fps': 0, 'camera_total_frames': 0}
+        else:
+            camera_stats = {'camera_fps': 0, 'camera_total_frames': 0}
+
         # 转换相机帧为base64
         frame_base64 = ''
         if frame is not None:
             _, buffer = cv2.imencode('.jpg', frame)
             frame_base64 = base64.b64encode(buffer).decode('utf-8')
         
-        return jsonify({
+        response_data = {
             'status': 'success',
             'emg_data': emg_data,
             'hand_data': hand_data,
             'frame': frame_base64,
-            'timestamp': time.time()
-        })
+            'timestamp': time.time(),
+            'camera_fps': camera_stats.get('camera_fps', 0),
+            'camera_total_frames': camera_stats.get('camera_total_frames', 0)
+        }
+        
+        return jsonify(response_data)
+    
     except Exception as e:
         print(f"获取数据错误: {e}")
+        import traceback
+        print(traceback.format_exc())
         return jsonify({
             'status': 'error',
             'message': str(e),
             'emg_data': {'raw_emg': [0] * 8, 'filtered_emg': [0] * 8},
             'hand_data': {},
-            'frame': ''
+            'frame': '',
+            'camera_fps': 0,
+            'camera_total_frames': 0
         })
 
 @app.route('/myo_status')
@@ -72,7 +92,6 @@ def myo_status():
             'synced': status['synced'],
             'frame_rate': status['frame_rate'],
             'total_frames': status['total_frames'],
-
         })
     return jsonify({
         'status': 'error',

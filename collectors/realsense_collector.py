@@ -4,7 +4,7 @@ import pyrealsense2 as rs
 import numpy as np
 from threading import Lock
 from hand_angles import HandAngleCalculator
-
+import time
 class RealSenseCollector:
     def __init__(self):
         # 初始化RealSense
@@ -31,6 +31,13 @@ class RealSenseCollector:
         self.hand_data = None
         self.lock = Lock()
         self.is_running = False
+
+        # 帧率计算相关变量
+        self.frame_count = 0
+        self.total_frames = 0
+        self.current_fps = 0
+        self.last_fps_update = time.time()
+        self.fps_update_interval = 1.0  # 每秒更新一次帧率
         
     def start(self):
         print("启动RealSense相机...")
@@ -52,13 +59,32 @@ class RealSenseCollector:
         with self.lock:
             return self.hand_data.copy() if self.hand_data is not None else None
         
+    def get_camera_stats(self):
+        """获取相机统计信息"""
+        with self.lock:
+            return {
+                'camera_fps': round(self.current_fps, 1),
+                'camera_total_frames': self.total_frames
+            } 
+               
     def process_frame(self):
         try:
             frames = self.pipeline.wait_for_frames()
             color_frame = frames.get_color_frame()
             if not color_frame:
                 return
-                
+
+            # 更新帧率统计
+            current_time = time.time()
+            self.frame_count += 1
+            self.total_frames += 1
+            
+            # 每秒更新一次帧率
+            if current_time - self.last_fps_update >= self.fps_update_interval:
+                self.current_fps = self.frame_count / (current_time - self.last_fps_update)
+                self.frame_count = 0
+                self.last_fps_update = current_time
+
             color_image = np.asanyarray(color_frame.get_data())
             results = self.hands.process(cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB))
             
@@ -84,7 +110,8 @@ class RealSenseCollector:
             else:
                 with self.lock:
                     self.hand_data = None
-                    
+
+                               
             with self.lock:
                 self.frame = color_image
                 
