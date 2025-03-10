@@ -3,8 +3,8 @@ from collectors.myo_collector import MyoManager
 from collectors.realsense_collector import RealSenseCollector
 from threading import Thread
 import time
-# import base64
-# import cv2
+import base64
+import cv2
 
 app = Flask(__name__)
 

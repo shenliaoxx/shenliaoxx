@@ -18,14 +18,14 @@
         }
 
         .status-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding: 10px 20px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: none;
+            /* 隐藏原状态栏 */
+        }
+
+        /* 设备展示区样式 */
+        .devices-showcase {
+            display: none;
+            /* 隐藏原设备展示区 */
         }
 
         .main-container {
@@ -61,12 +61,91 @@
             flex-direction: column;
         }
 
+        /* 设备信息区域 */
+        .device-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .device-image-small {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            margin-right: 15px;
+        }
+
+        .device-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .device-status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #ccc;
+        }
+
+        .device-status-text {
+            font-size: 14px;
+            color: #666;
+        }
+
         .angles-container {
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .angles-content {
+            display: flex;
+            height: calc(100% - 50px);
+            gap: 15px;
+            align-items: stretch;
+            /* 确保子元素拉伸到相同高度 */
+        }
+
+        .skeleton-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid #e9ecef;
+            overflow: hidden;
+            height: 100%;
+            /* 确保高度填充父容器 */
+        }
+
+        .skeleton-image {
+            max-width: 95%;
+            max-height: 95%;
+            object-fit: contain;
+            margin: 0 auto;
+        }
+
+        .finger-data {
+            flex: 1.2;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            overflow-y: auto;
+            padding-right: 5px;
+            align-content: flex-start;
+            justify-content: space-between;
+            height: 100%;
+            /* 确保与图片容器等高 */
         }
 
         #camera-feed {
@@ -103,35 +182,78 @@
             border-bottom: 1px solid #eee;
         }
 
-        .finger-data {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            height: calc(100% - 50px);
-            /* 减去标题高度 */
-            overflow-y: auto;
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            display: flex;
+            align-items: center;
+        }
+
+        .device-icon {
+            width: 30px;
+            height: 30px;
+            object-fit: contain;
+            margin-right: 10px;
+        }
+
+        .data-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 8px;
+        }
+
+        .data-indicator.active {
+            background-color: #28a745;
+        }
+
+        .data-indicator.inactive {
+            background-color: #dc3545;
         }
 
         .finger-section {
             background: #f8f9fa;
-            padding: 12px;
+            padding: 8px;
             border-radius: 8px;
             border: 1px solid #e9ecef;
+            font-size: 12px;
+            width: calc(50% - 4px);
+            box-sizing: border-box;
+            margin-bottom: 6px;
+        }
+
+        /* 针对拇指的特殊处理，因为数据较少 */
+        .finger-section.thumb {
+            width: calc(50% - 4px);
+        }
+
+        /* 针对小指的特殊处理，确保在底部正确显示 */
+        .finger-section.pinky {
+            width: calc(50% - 4px);
+        }
+
+        /* 针对食指、中指和无名指的处理 */
+        .finger-section.index,
+        .finger-section.middle,
+        .finger-section.ring {
+            width: calc(50% - 4px);
         }
 
         .finger-section h4 {
-            margin: 0 0 8px 0;
+            margin: 0 0 4px 0;
             color: #333;
-            font-size: 14px;
+            font-size: 13px;
             border-bottom: 2px solid #007bff;
-            padding-bottom: 4px;
+            padding-bottom: 2px;
         }
 
         .joint-angle {
             display: flex;
             justify-content: space-between;
-            padding: 4px 0;
-            font-size: 12px;
+            padding: 2px 0;
+            font-size: 11px;
             border-bottom: 1px solid #eee;
         }
 
@@ -187,28 +309,6 @@
         .status.success {
             background-color: #d4edda;
             color: #155724;
-        }
-
-        .section-title {
-            font-size: 16px;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .data-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-left: 8px;
-        }
-
-        .data-indicator.active {
-            background-color: #28a745;
-        }
-
-        .data-indicator.inactive {
-            background-color: #dc3545;
         }
 
         .emg-header {
@@ -299,6 +399,30 @@
             gap: 10px;
             margin-top: 10px;
         }
+
+        /* 系统控制区域 */
+        .system-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .system-status {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .control-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
     </style>
 </head>
 
@@ -307,14 +431,17 @@
         <h1>多模态数据采集系统</h1>
     </div>
 
-    <div class="status-bar">
-        <div id="myo-status" class="status">Myo状态: 检查中...</div>
-        <div class="controls">
+    <!-- 系统控制区域 -->
+    <div class="system-controls">
+        <div class="system-status">
+            <div id="status" class="status">系统状态: 初始化中...</div>
+            <div id="myo-status" class="status">Myo状态: 检查中...</div>
+        </div>
+        <div class="control-buttons">
             <button id="recordBtn" onclick="toggleRecording()">开始记录</button>
             <button onclick="resetData()" class="reset-btn">重置数据</button>
             <button onclick="resetMyoConnection()" class="reset-btn">重置Myo连接</button>
         </div>
-        <div id="status" class="status">系统状态: 初始化中...</div>
     </div>
 
     <div class="main-container">
@@ -322,8 +449,12 @@
             <div class="camera-container">
                 <div class="section-header">
                     <div class="section-title">
+                        <img src="{{ url_for('static', filename='images/realsense_camera.png') }}" alt="RealSense相机"
+                            class="device-icon">
                         手部追踪
                         <span class="data-indicator" id="camera-indicator"></span>
+                        <span class="device-status-text" id="realsense-connection-text"
+                            style="margin-left: 8px; font-size: 12px; color: #666;"></span>
                     </div>
                     <div class="camera-stats">
                         <span class="stat-item">
@@ -346,17 +477,27 @@
                         <span class="data-indicator" id="angles-indicator"></span>
                     </div>
                 </div>
-                <div class="finger-data" id="angles-display"></div>
+                <div class="angles-content">
+                    <div class="skeleton-container">
+                        <img src="{{ url_for('static', filename='images/hand_skeleton.png') }}" alt="手部骨骼"
+                            class="skeleton-image">
+                    </div>
+                    <div class="finger-data" id="angles-display"></div>
+                </div>
             </div>
         </div>
 
         <div class="lower-section">
             <div class="section-header">
                 <div class="section-title">
+                    <img src="{{ url_for('static', filename='images/myo_armband.png') }}" alt="Myo臂环"
+                        class="device-icon">
                     EMG数据
                     <span class="data-indicator" id="emg-indicator"></span>
+                    <span class="device-status-text" id="myo-connection-text"
+                        style="margin-left: 8px; font-size: 12px; color: #666;"></span>
                 </div>
-                <!-- 新增EMG模式选择器 -->
+                <!-- EMG模式选择器 -->
                 <div class="emg-mode-selector">
                     <button class="mode-btn active" id="filtered-mode-btn"
                         onclick="switchEMGMode('filtered')">滤波后数据</button>
@@ -364,7 +505,7 @@
                 </div>
             </div>
 
-            <!-- 新增EMG统计信息 -->
+            <!-- EMG统计信息 -->
             <div class="stats-container">
                 <div class="stat-item">
                     <span class="stat-label">帧率:</span>
@@ -403,6 +544,7 @@
                 this.initCharts();
                 this.fetchData();
                 this.checkMyoStatus();
+                this.updateDeviceIndicators(); // 添加设备状态指示器更新
             }
 
             initCharts() {
@@ -544,12 +686,42 @@
                 const display = document.getElementById('angles-display');
                 display.innerHTML = '';
 
+                // 调整手指顺序，使布局更加均衡
                 const fingers = ['thumb', 'index', 'middle', 'ring', 'pinky'];
                 const movements = ['flexion', 'abduction'];
 
-                fingers.forEach(finger => {
+                // 创建一个包装容器来控制整体布局
+                const wrapper = document.createElement('div');
+                wrapper.style.width = '100%';
+                wrapper.style.display = 'flex';
+                wrapper.style.flexWrap = 'wrap';
+                wrapper.style.justifyContent = 'space-between';
+                wrapper.style.alignItems = 'flex-start';
+
+                // 创建上排容器（拇指、食指）
+                const topRow = document.createElement('div');
+                topRow.style.width = '100%';
+                topRow.style.display = 'flex';
+                topRow.style.justifyContent = 'space-between';
+                topRow.style.marginBottom = '6px';
+
+                // 创建中排容器（中指、无名指）
+                const middleRow = document.createElement('div');
+                middleRow.style.width = '100%';
+                middleRow.style.display = 'flex';
+                middleRow.style.justifyContent = 'space-between';
+                middleRow.style.marginBottom = '6px';
+
+                // 创建下排容器（小指）
+                const bottomRow = document.createElement('div');
+                bottomRow.style.width = '100%';
+                bottomRow.style.display = 'flex';
+                bottomRow.style.justifyContent = 'center';
+
+                // 将手指分配到不同行
+                fingers.forEach((finger, index) => {
                     const section = document.createElement('div');
-                    section.className = 'finger-section';
+                    section.className = `finger-section ${finger}`;
                     let html = `<h4>${this.getFingerName(finger)}</h4>`;
 
                     ['mcp', 'pip', 'dip'].forEach(joint => {
@@ -569,8 +741,24 @@
                     });
 
                     section.innerHTML = html;
-                    display.appendChild(section);
+
+                    // 根据手指类型分配到不同行
+                    if (finger === 'thumb' || finger === 'index') {
+                        topRow.appendChild(section);
+                    } else if (finger === 'middle' || finger === 'ring') {
+                        middleRow.appendChild(section);
+                    } else if (finger === 'pinky') {
+                        bottomRow.appendChild(section);
+                    }
                 });
+
+                // 将所有行添加到主容器
+                wrapper.appendChild(topRow);
+                wrapper.appendChild(middleRow);
+                wrapper.appendChild(bottomRow);
+
+                // 将主容器添加到显示区域
+                display.appendChild(wrapper);
             }
 
             getFingerName(finger) {
@@ -756,6 +944,36 @@
                 if (this.isRecording) {
                     this.toggleRecording();
                 }
+            }
+
+            // 添加设备状态指示器更新方法
+            updateDeviceIndicators() {
+                // 定期更新设备指示器状态
+                setInterval(() => {
+                    // 更新Myo指示器
+                    const myoConnected = document.getElementById('myo-status').classList.contains('success');
+                    const myoText = document.getElementById('myo-connection-text');
+
+                    if (myoConnected) {
+                        myoText.textContent = '已连接';
+                        document.getElementById('emg-indicator').style.backgroundColor = '#28a745'; // 绿色
+                    } else {
+                        myoText.textContent = '未连接';
+                        document.getElementById('emg-indicator').style.backgroundColor = '#dc3545'; // 红色
+                    }
+
+                    // 更新RealSense指示器
+                    const realsenseConnected = document.getElementById('camera-indicator').classList.contains('active');
+                    const realsenseText = document.getElementById('realsense-connection-text');
+
+                    if (realsenseConnected) {
+                        realsenseText.textContent = '已连接';
+                        document.getElementById('camera-indicator').style.backgroundColor = '#28a745'; // 绿色
+                    } else {
+                        realsenseText.textContent = '未连接';
+                        document.getElementById('camera-indicator').style.backgroundColor = '#dc3545'; // 红色
+                    }
+                }, 1000);
             }
         }
 

@@ -5,6 +5,7 @@ import numpy as np
 from threading import Lock
 from data_processing.hand_angles import HandAngleCalculator
 import time
+
 class RealSenseCollector:
     def __init__(self):
         # 初始化RealSense
