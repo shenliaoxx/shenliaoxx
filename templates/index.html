@@ -423,12 +423,325 @@
             gap: 10px;
             justify-content: center;
         }
+
+        /* 实验配置面板样式 */
+        .experiment-setup {
+            margin-bottom: 20px;
+        }
+
+        .setup-content {
+            padding: 15px;
+            background: #fff;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .action-categories {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .action-category {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .action-list {
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .action-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            margin-bottom: 5px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+
+        .action-item label {
+            margin-left: 10px;
+            flex-grow: 1;
+        }
+
+        .current-action {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .current-action-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-top: 10px;
+        }
+
+        .trial-dots {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .trial-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #dee2e6;
+        }
+
+        .trial-dot.completed {
+            background: var(--primary-color);
+        }
+
+        .trial-dot.current {
+            background: var(--warning-color);
+            animation: pulse 1s infinite;
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(3px);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 900px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #333;
+            font-size: 1.2rem;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .close-modal {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-top: 56.25%;
+            /* 16:9 宽高比 */
+            background: #000;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        #demo-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .demo-instructions {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* 演示按钮样式 */
+        .demo-btn {
+            padding: 4px 8px;
+            background-color: #17a2b8;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .demo-btn:hover {
+            background-color: #138496;
+            transform: translateY(-1px);
+        }
+
+        .demo-btn:active {
+            transform: translateY(0);
+        }
+
+        /* 加载状态样式 */
+        .loading .video-container::after {
+            content: '视频加载中...';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+        }
+
+        .error .video-container::after {
+            content: '视频加载失败';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #dc3545;
+            font-size: 14px;
+        }
     </style>
 </head>
 
 <body>
     <div class="header">
         <h1>多模态数据采集系统</h1>
+    </div>
+
+    <!-- 在系统控制区域之前添加以下内容 -->
+    <div class="experiment-setup" id="experiment-setup">
+        <div class="panel">
+            <div class="section-header">
+                <div class="section-title">实验配置</div>
+                <button class="btn btn-primary" id="toggle-setup-btn" onclick="toggleSetupPanel()">
+                    显示配置
+                </button>
+            </div>
+
+            <div class="setup-content" id="setup-content" style="display: none;">
+                <!-- 实验参数配置 -->
+                <div class="config-section">
+                    <h3>基本参数设置</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="subject-id">受试者编号</label>
+                            <input type="text" id="subject-id" class="form-control" placeholder="例如：S001" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dominant-hand">惯用手</label>
+                            <select id="dominant-hand" class="form-control" required>
+                                <option value="">请选择</option>
+                                <option value="right">右手</option>
+                                <option value="left">左手</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="action-duration">动作持续时间(秒)</label>
+                            <input type="number" id="action-duration" class="form-control" min="5" max="10" value="8"
+                                required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="repeat-times">重复次数</label>
+                            <input type="number" id="repeat-times" class="form-control" min="3" max="5" value="3"
+                                required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="rest-duration">休息时间(秒)</label>
+                            <input type="number" id="rest-duration" class="form-control" min="3" max="5" value="4"
+                                required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 动作列表配置 -->
+                <div class="config-section">
+                    <h3>动作列表配置</h3>
+                    <div class="action-categories">
+                        <!-- 细粒度手部动作 -->
+                        <div class="action-category">
+                            <h4>细粒度手部动作</h4>
+                            <div class="action-list" id="fine-actions">
+                                <!-- 动作列表将通过JavaScript动态生成 -->
+                            </div>
+                        </div>
+
+                        <!-- 任务导向手部动作 -->
+                        <div class="action-category">
+                            <h4>任务导向手部动作</h4>
+                            <div class="action-list" id="task-actions">
+                                <!-- 动作列表将通过JavaScript动态生成 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 实验进度显示 -->
+                <div class="config-section" id="experiment-progress" style="display: none;">
+                    <h3>实验进度</h3>
+                    <div class="current-action">
+                        <h4>当前动作</h4>
+                        <div id="current-action-display" class="current-action-text">等待开始...</div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="experiment-progress-bar"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <span id="action-count">0/0 动作</span>
+                        <span id="trial-count">0/0 次</span>
+                    </div>
+                    <div class="trial-dots" id="trial-dots"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- 系统控制区域 -->
@@ -530,6 +843,26 @@
         </div>
     </div>
 
+    <!-- 在 body 标签内，main-container div 之前添加模态框结构 -->
+    <div id="demo-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="demo-title">动作演示</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="video-container">
+                    <video id="demo-video" controls>
+                        您的浏览器不支持视频播放。
+                    </video>
+                </div>
+                <div class="demo-instructions" id="demo-instructions">
+                    <!-- 动作说明将在这里显示 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         class MultiModalCollector {
             constructor() {
@@ -545,6 +878,7 @@
                 this.fetchData();
                 this.checkMyoStatus();
                 this.updateDeviceIndicators(); // 添加设备状态指示器更新
+                this.initExperimentSetup();
             }
 
             initCharts() {
@@ -810,9 +1144,10 @@
                     const response = await fetch('/get_data');
                     const data = await response.json();
 
-                    console.log("相机帧率:", data.camera_fps, "总帧数:", data.camera_total_frames); // 调试输出
-
                     if (data.status === 'success') {
+                        // 添加调试输出，查看手部数据结构
+                        console.log("Hand data:", data.hand_data);
+
                         // 更新数据指示器
                         this.updateDataIndicators(data);
 
@@ -891,30 +1226,47 @@
                 const btn = document.getElementById('recordBtn');
 
                 if (this.isRecording) {
+                    // 开始记录时，获取基本信息
+                    const subjectId = document.getElementById('subject-id').value;
+                    const dominantHand = document.getElementById('dominant-hand').value;
+
+                    if (!subjectId || !dominantHand) {
+                        alert('请先填写受试者信息（编号和惯用手）');
+                        this.isRecording = false;
+                        return;
+                    }
+
+                    // 发送开始记录请求
+                    fetch('/record_action', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            subject_id: subjectId,
+                            dominant_hand: dominantHand,
+                            action: 'manual_recording', // 手动记录标记
+                            trial: Date.now() // 使用时间戳作为试次标识
+                        })
+                    });
+
                     btn.textContent = '停止记录';
                     btn.classList.add('recording');
                 } else {
+                    // 发送停止记录请求
+                    fetch('/stop_recording', {
+                        method: 'POST'
+                    }).then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                this.updateStatus('数据已保存为HDF5格式');
+                            } else {
+                                this.updateStatus('数据保存失败: ' + data.message, true);
+                            }
+                        });
+
                     btn.textContent = '开始记录';
                     btn.classList.remove('recording');
-                    this.saveRecordedData();
-                }
-            }
-
-            saveRecordedData() {
-                if (this.recordedData.length > 0) {
-                    const blob = new Blob(
-                        [JSON.stringify(this.recordedData, null, 2)],
-                        { type: 'application/json' }
-                    );
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `multimodal_data_${new Date().toISOString()}.json`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    this.recordedData = [];
                 }
             }
 
@@ -975,6 +1327,186 @@
                     }
                 }, 1000);
             }
+
+            initExperimentSetup() {
+                // 初始化动作列表
+                this.initActionLists();
+
+                // 绑定实验控制事件
+                document.getElementById('toggle-setup-btn').addEventListener('click', () => {
+                    const setupContent = document.getElementById('setup-content');
+                    const isHidden = setupContent.style.display === 'none';
+                    setupContent.style.display = isHidden ? 'block' : 'none';
+                    document.getElementById('toggle-setup-btn').textContent =
+                        isHidden ? '隐藏配置' : '显示配置';
+                });
+            }
+
+            initActionLists() {
+                // 细粒度动作列表及其说明
+                const fineActions = [
+                    {
+                        name: '握拳（完全闭合）',
+                        video: 'fist.mp4',
+                        instructions: '1. 从手掌完全伸展开始\n2. 缓慢收拢所有手指\n3. 最终形成完全握拳状态\n4. 保持5秒'
+                    },
+                    {
+                        name: '手掌完全伸展',
+                        video: 'palm_extension.mp4',
+                        instructions: '1. 手指自然伸直\n2. 掌心完全展开\n3. 手指间适度分开\n4. 保持5秒'
+                    },
+                    // ... 其他动作配置
+                ];
+
+                // 任务导向动作列表及其说明
+                const taskActions = [
+                    {
+                        name: '模拟拿杯子',
+                        video: 'cup_grasp.mp4',
+                        instructions: '1. 手掌自然张开\n2. 做出抓握杯子的动作\n3. 保持自然抓握姿势\n4. 维持5秒'
+                    },
+                    // ... 其他动作配置
+                ];
+
+                this.createActionList('fine-actions', fineActions);
+                this.createActionList('task-actions', taskActions);
+            }
+
+            createActionList(containerId, actions) {
+                const container = document.getElementById(containerId);
+                container.innerHTML = actions.map((action, index) => `
+                    <div class="action-item">
+                        <input type="checkbox" id="${containerId}-${index}" checked>
+                        <label for="${containerId}-${index}">${action.name}</label>
+                        <button class="demo-btn" onclick="showActionDemo('${action.name}', '${action.video}', \`${action.instructions}\`)">
+                            <i class="fas fa-play"></i> 演示
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            startExperiment() {
+                // 验证实验配置
+                if (!this.validateExperimentConfig()) {
+                    return;
+                }
+
+                // 显示实验进度面板
+                document.getElementById('experiment-progress').style.display = 'block';
+
+                // 初始化实验状态
+                this.experimentState = {
+                    currentActionIndex: 0,
+                    currentTrialIndex: 0,
+                    totalActions: this.getSelectedActions().length,
+                    totalTrials: parseInt(document.getElementById('repeat-times').value),
+                    actionDuration: parseInt(document.getElementById('action-duration').value),
+                    restDuration: parseInt(document.getElementById('rest-duration').value)
+                };
+
+                // 更新试次指示器
+                this.updateTrialDots();
+
+                // 开始第一个动作
+                this.startNextAction();
+            }
+
+            validateExperimentConfig() {
+                const subjectId = document.getElementById('subject-id').value;
+                const dominantHand = document.getElementById('dominant-hand').value;
+
+                if (!subjectId || !dominantHand) {
+                    alert('请填写完整的受试者信息');
+                    return false;
+                }
+
+                const selectedActions = this.getSelectedActions();
+                if (selectedActions.length === 0) {
+                    alert('请至少选择一个动作');
+                    return false;
+                }
+
+                return true;
+            }
+
+            getSelectedActions() {
+                const selectedActions = [];
+                document.querySelectorAll('.action-item input[type="checkbox"]:checked').forEach(checkbox => {
+                    selectedActions.push(checkbox.nextElementSibling.textContent);
+                });
+                return selectedActions;
+            }
+
+            updateTrialDots() {
+                const dotsContainer = document.getElementById('trial-dots');
+                dotsContainer.innerHTML = '';
+
+                for (let i = 0; i < this.experimentState.totalTrials; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'trial-dot';
+                    if (i < this.experimentState.currentTrialIndex) {
+                        dot.classList.add('completed');
+                    } else if (i === this.experimentState.currentTrialIndex) {
+                        dot.classList.add('current');
+                    }
+                    dotsContainer.appendChild(dot);
+                }
+            }
+
+            startNextAction() {
+                const actions = this.getSelectedActions();
+                if (this.experimentState.currentActionIndex >= actions.length) {
+                    this.finishExperiment();
+                    return;
+                }
+
+                const currentAction = actions[this.experimentState.currentActionIndex];
+                document.getElementById('current-action-display').textContent = currentAction;
+
+                // 更新进度
+                this.updateExperimentProgress();
+
+                // 开始记录数据
+                this.startRecording();
+
+                // 设置动作完成计时器
+                setTimeout(() => {
+                    this.stopRecording();
+                    this.startRest();
+                }, this.experimentState.actionDuration * 1000);
+            }
+
+            startRest() {
+                document.getElementById('current-action-display').textContent = '休息中...';
+
+                setTimeout(() => {
+                    this.experimentState.currentTrialIndex++;
+                    if (this.experimentState.currentTrialIndex >= this.experimentState.totalTrials) {
+                        this.experimentState.currentTrialIndex = 0;
+                        this.experimentState.currentActionIndex++;
+                    }
+                    this.updateTrialDots();
+                    this.startNextAction();
+                }, this.experimentState.restDuration * 1000);
+            }
+
+            updateExperimentProgress() {
+                const progress = (this.experimentState.currentActionIndex * this.experimentState.totalTrials +
+                    this.experimentState.currentTrialIndex) /
+                    (this.experimentState.totalActions * this.experimentState.totalTrials) * 100;
+
+                document.getElementById('experiment-progress-bar').style.width = `${progress}%`;
+                document.getElementById('action-count').textContent =
+                    `${this.experimentState.currentActionIndex + 1}/${this.experimentState.totalActions} 动作`;
+                document.getElementById('trial-count').textContent =
+                    `${this.experimentState.currentTrialIndex + 1}/${this.experimentState.totalTrials} 次`;
+            }
+
+            finishExperiment() {
+                alert('实验完成！');
+                document.getElementById('current-action-display').textContent = '实验已完成';
+                this.stopRecording();
+            }
         }
 
         // 创建全局采集器实例
@@ -1001,6 +1533,70 @@
         window.addEventListener('beforeunload', () => {
             collector.stop();
         });
+
+        // 动作演示相关函数
+        function showActionDemo(actionName, videoFile, instructions) {
+            const modal = document.getElementById('demo-modal');
+            const video = document.getElementById('demo-video');
+            const title = document.getElementById('demo-title');
+            const instructionsElement = document.getElementById('demo-instructions');
+
+            // 重置状态
+            modal.classList.remove('loading', 'error');
+            modal.classList.add('loading');
+
+            // 设置内容
+            title.textContent = `动作演示 - ${actionName}`;
+            video.src = `/static/videos/${videoFile}`;
+            instructionsElement.innerHTML = `
+                <h4>动作要领：</h4>
+                <pre>${instructions}</pre>
+            `;
+
+            // 显示模态框
+            modal.style.display = 'block';
+
+            // 视频事件处理
+            video.addEventListener('loadstart', () => {
+                modal.classList.add('loading');
+            });
+
+            video.addEventListener('canplay', () => {
+                modal.classList.remove('loading');
+                video.play().catch(e => console.log('自动播放失败:', e));
+            });
+
+            video.addEventListener('error', () => {
+                modal.classList.remove('loading');
+                modal.classList.add('error');
+                console.error('视频加载失败');
+            });
+        }
+
+        // 关闭模态框处理
+        document.querySelector('.close-modal').onclick = closeModal;
+        window.onclick = function (event) {
+            const modal = document.getElementById('demo-modal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        };
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        function closeModal() {
+            const modal = document.getElementById('demo-modal');
+            const video = document.getElementById('demo-video');
+            if (modal.style.display === 'block') {
+                modal.style.display = 'none';
+                video.pause();
+                video.currentTime = 0;
+                modal.classList.remove('loading', 'error');
+            }
+        }
     </script>
 </body>
 
